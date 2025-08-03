@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Secure Squares - Hacker Theme</title>
   <style>
     body {
@@ -15,7 +15,6 @@
       padding: 20px;
     }
     h2 {
-      margin-bottom: 10px;
       text-shadow: 0 0 10px #0f0;
     }
     .color-row {
@@ -38,20 +37,28 @@
       box-shadow: 0 0 10px #0f0;
       animation: glow 1.5s infinite alternate;
       cursor: pointer;
-      user-select: none;
       text-align: center;
-      position: relative;
+      user-select: none;
       padding: 4px;
     }
     @keyframes glow {
       from { box-shadow: 0 0 5px #0f0; }
       to { box-shadow: 0 0 15px #0f0; }
     }
+    .highlight {
+      outline: 2px solid lime;
+      animation: pulse 1s ease-in-out 3;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 15px lime; }
+      50% { transform: scale(1.1); box-shadow: 0 0 25px limegreen; }
+      100% { transform: scale(1); box-shadow: 0 0 15px lime; }
+    }
     .input-box {
       display: flex;
+      flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 20px;
-      flex-wrap: wrap;
       justify-content: center;
     }
     input[type="text"], input[type="password"], input[type="file"] {
@@ -74,47 +81,64 @@
       background: #0f0;
       color: #000;
     }
-    .address-label, .data-box {
+    .address-label {
       font-size: 10px;
       margin-top: 4px;
       color: #0f0;
       max-width: 100px;
-      overflow-wrap: break-word;
       text-align: center;
+      word-wrap: break-word;
     }
-    .pulse {
-      animation: pulse 1s ease-in-out 3;
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: #000;
+      color: #0f0;
+      border: 1px solid #0f0;
+      padding: 20px;
+      z-index: 1000;
+      text-align: center;
+      box-shadow: 0 0 20px #0f0;
     }
-    @keyframes pulse {
-      0% { transform: scale(1); box-shadow: 0 0 15px lime; }
-      50% { transform: scale(1.1); box-shadow: 0 0 25px limegreen; }
-      100% { transform: scale(1); box-shadow: 0 0 15px lime; }
+    .popup button {
+      margin-top: 10px;
+    }
+    .overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background-color: rgba(0,0,0,0.8);
+      z-index: 999;
     }
     @media (max-width: 600px) {
-      .square {
-        width: 60px;
-        height: 60px;
-        font-size: 10px;
-      }
-      .input-box {
-        flex-direction: column;
-        align-items: center;
-      }
+      .square { width: 60px; height: 60px; font-size: 10px; }
+      .input-box { flex-direction: column; align-items: center; }
     }
   </style>
 </head>
 <body>
   <h2>💀 SECURE SQUARES</h2>
+
   <div class="input-box">
-    <input type="text" id="textInput" placeholder="Enter square data" />
+    <input type="text" id="titleInput" placeholder="Title" />
+    <input type="text" id="contentInput" placeholder="Content" />
     <input type="password" id="dataPassword" placeholder="Password (optional)" />
     <button onclick="addSquare()">Add Square</button>
   </div>
+
   <div class="input-box">
     <input type="text" id="deleteID" placeholder="Square ID to delete" />
     <input type="password" id="deletePassword" placeholder="Delete Password" />
     <button onclick="deleteSquare()">Delete</button>
   </div>
+
+  <div class="input-box">
+    <input type="text" id="searchID" placeholder="Search by ID" />
+    <button onclick="searchSquare()">🔍 Search</button>
+  </div>
+
   <div class="input-box">
     <button onclick="downloadJSON()">⬇ Download</button>
     <input type="file" id="uploadFile" />
@@ -122,6 +146,7 @@
   </div>
 
   <div class="color-row" id="colorRow"></div>
+  <div id="popupContainer"></div>
 
   <script>
     let dataStore = {};
@@ -131,40 +156,40 @@
     }
 
     function addSquare() {
-      const text = document.getElementById("textInput").value.trim();
+      const title = document.getElementById("titleInput").value.trim();
+      const content = document.getElementById("contentInput").value.trim();
       const password = document.getElementById("dataPassword").value;
-      if (!text) return;
+      if (!title && !content) return;
 
       const id = generateID();
-      dataStore[id] = { text, password };
+      dataStore[id] = { title, content, password };
 
       const square = document.createElement("div");
-      square.className = "square pulse";
+      square.className = "square";
       square.id = id;
       square.innerText = "Click";
       square.onclick = () => revealData(id);
 
-      const address = document.createElement("div");
-      address.className = "address-label";
-      address.textContent = id;
+      const label = document.createElement("div");
+      label.className = "address-label";
+      label.textContent = id;
 
       const container = document.createElement("div");
       container.style.display = "flex";
       container.style.flexDirection = "column";
       container.style.alignItems = "center";
       container.appendChild(square);
-      container.appendChild(address);
+      container.appendChild(label);
 
       document.getElementById("colorRow").appendChild(container);
 
-      document.getElementById("textInput").value = "";
+      document.getElementById("titleInput").value = "";
+      document.getElementById("contentInput").value = "";
       document.getElementById("dataPassword").value = "";
     }
 
     function revealData(id) {
-      const square = document.getElementById(id);
       const stored = dataStore[id];
-
       if (!stored) return;
 
       const pass = prompt("Enter password to reveal:");
@@ -172,15 +197,39 @@
         alert("Incorrect password!");
         return;
       }
+      showPopup(`<strong>${stored.title}</strong><br>${stored.content}`);
+    }
 
-      const box = document.createElement("div");
-      box.className = "data-box";
-      box.textContent = stored.text;
+    function showPopup(content) {
+      document.getElementById("popupContainer").innerHTML = `
+        <div class="overlay" onclick="closePopup()"></div>
+        <div class="popup">
+          <div>${content}</div>
+          <button onclick="closePopup()">Close</button>
+        </div>
+      `;
+    }
 
-      const parent = square.parentElement;
-      if (!parent.querySelector(".data-box")) {
-        parent.appendChild(box);
+    function closePopup() {
+      document.getElementById("popupContainer").innerHTML = "";
+    }
+
+    function deleteSquare() {
+      const id = document.getElementById("deleteID").value.trim();
+      const pass = document.getElementById("deletePassword").value;
+      if (!dataStore[id]) return alert("ID not found");
+      if (dataStore[id].password && pass !== dataStore[id].password) {
+        return alert("Wrong password");
       }
+
+      delete dataStore[id];
+      const element = document.getElementById(id);
+      if (element && element.parentElement) {
+        element.parentElement.remove();
+      }
+
+      document.getElementById("deleteID").value = "";
+      document.getElementById("deletePassword").value = "";
     }
 
     function downloadJSON() {
@@ -209,16 +258,16 @@
             square.innerText = "Click";
             square.onclick = () => revealData(id);
 
-            const address = document.createElement("div");
-            address.className = "address-label";
-            address.textContent = id;
+            const label = document.createElement("div");
+            label.className = "address-label";
+            label.textContent = id;
 
             const container = document.createElement("div");
             container.style.display = "flex";
             container.style.flexDirection = "column";
             container.style.alignItems = "center";
             container.appendChild(square);
-            container.appendChild(address);
+            container.appendChild(label);
 
             document.getElementById("colorRow").appendChild(container);
           }
@@ -229,23 +278,21 @@
       reader.readAsText(file);
     }
 
-    function deleteSquare() {
-      const id = document.getElementById("deleteID").value.trim();
-      const pass = document.getElementById("deletePassword").value;
-      if (!dataStore[id]) return alert("ID not found");
+    function searchSquare() {
+      const searchId = document.getElementById("searchID").value.trim().toLowerCase();
+      if (!searchId) return;
 
-      if (dataStore[id].password && pass !== dataStore[id].password) {
-        return alert("Wrong password");
-      }
+      let found = false;
+      document.querySelectorAll(".square").forEach(sq => {
+        if (sq.id.toLowerCase() === searchId) {
+          sq.classList.add("highlight");
+          sq.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => sq.classList.remove("highlight"), 2000);
+          found = true;
+        }
+      });
 
-      delete dataStore[id];
-      const element = document.getElementById(id);
-      if (element && element.parentElement) {
-        element.parentElement.remove();
-      }
-
-      document.getElementById("deleteID").value = "";
-      document.getElementById("deletePassword").value = "";
+      if (!found) alert("Square ID not found.");
     }
   </script>
 </body>
