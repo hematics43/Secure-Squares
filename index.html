@@ -2,18 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Secure Squares with Data Below</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Secure Squares - Hacker Theme</title>
   <style>
     body {
-      font-family: sans-serif;
-      background: #111;
-      color: white;
+      font-family: 'Courier New', monospace;
+      background: #000;
+      color: #0f0;
       display: flex;
       flex-direction: column;
       align-items: center;
       padding: 20px;
     }
-    h2 { margin-bottom: 10px; }
+    h2 {
+      margin-bottom: 10px;
+      text-shadow: 0 0 10px #0f0;
+    }
     .color-row {
       display: flex;
       flex-wrap: wrap;
@@ -29,20 +33,19 @@
       align-items: center;
       justify-content: center;
       font-size: 12px;
-      color: white;
-      background-color: gray;
-      box-shadow: 0 0 10px rgba(255,255,255,0.5);
+      color: #0f0;
+      background-color: #111;
+      box-shadow: 0 0 10px #0f0;
       animation: glow 1.5s infinite alternate;
       cursor: pointer;
       user-select: none;
       text-align: center;
       position: relative;
       padding: 4px;
-      scroll-margin-top: 100px;
     }
     @keyframes glow {
-      from { box-shadow: 0 0 5px rgba(255,255,255,0.3); }
-      to { box-shadow: 0 0 15px rgba(255,255,255,0.8); }
+      from { box-shadow: 0 0 5px #0f0; }
+      to { box-shadow: 0 0 15px #0f0; }
     }
     .input-box {
       display: flex;
@@ -54,24 +57,27 @@
     input[type="text"], input[type="password"], input[type="file"] {
       padding: 8px;
       border-radius: 4px;
-      border: 1px solid #555;
-      background-color: #222;
-      color: white;
+      border: 1px solid #0f0;
+      background-color: #000;
+      color: #0f0;
       width: 180px;
     }
     button {
       padding: 8px 16px;
-      background: #333;
-      color: white;
-      border: none;
+      background: #111;
+      color: #0f0;
+      border: 1px solid #0f0;
       border-radius: 5px;
       cursor: pointer;
     }
-    button:hover { background: #555; }
+    button:hover {
+      background: #0f0;
+      color: #000;
+    }
     .address-label, .data-box {
       font-size: 10px;
       margin-top: 4px;
-      color: #ccc;
+      color: #0f0;
       max-width: 100px;
       overflow-wrap: break-word;
       text-align: center;
@@ -80,238 +86,167 @@
       animation: pulse 1s ease-in-out 3;
     }
     @keyframes pulse {
-      0% { transform: scale(1); box-shadow: 0 0 15px yellow; }
-      50% { transform: scale(1.1); box-shadow: 0 0 25px orange; }
-      100% { transform: scale(1); box-shadow: 0 0 15px yellow; }
+      0% { transform: scale(1); box-shadow: 0 0 15px lime; }
+      50% { transform: scale(1.1); box-shadow: 0 0 25px limegreen; }
+      100% { transform: scale(1); box-shadow: 0 0 15px lime; }
+    }
+    @media (max-width: 600px) {
+      .square {
+        width: 60px;
+        height: 60px;
+        font-size: 10px;
+      }
+      .input-box {
+        flex-direction: column;
+        align-items: center;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Secure Squares with Data Display</h2>
+  <h2>💀 SECURE SQUARES</h2>
   <div class="input-box">
-    <input type="text" id="userInput" placeholder="Enter message">
-    <input type="password" id="passwordInput" placeholder="Set password">
-    <button onclick="addSecureSquare()">Add Locked Square</button>
-    <button onclick="toggleAddresses()" id="addressToggle">Show Addresses</button>
-    <button onclick="downloadData()">Download JSON</button>
-    <input type="file" id="uploadInput" style="display:none" accept=".json" onchange="uploadData(event)">
-    <button onclick="document.getElementById('uploadInput').click()">Upload JSON</button>
-    <button onclick="revealAllSquares()">Reveal All (with password)</button>
+    <input type="text" id="textInput" placeholder="Enter square data" />
+    <input type="password" id="dataPassword" placeholder="Password (optional)" />
+    <button onclick="addSquare()">Add Square</button>
   </div>
   <div class="input-box">
-    <input type="text" id="searchBox" placeholder="Search by address (e.g. #A1B2C3)">
-    <button onclick="searchSquare()">Search</button>
-    <button onclick="deleteSquare()">Delete Square</button>
+    <input type="text" id="deleteID" placeholder="Square ID to delete" />
+    <input type="password" id="deletePassword" placeholder="Delete Password" />
+    <button onclick="deleteSquare()">Delete</button>
   </div>
+  <div class="input-box">
+    <button onclick="downloadJSON()">⬇ Download</button>
+    <input type="file" id="uploadFile" />
+    <button onclick="uploadJSON()">⬆ Upload</button>
+  </div>
+
   <div class="color-row" id="colorRow"></div>
+
   <script>
-    const colorRow = document.getElementById("colorRow");
-    let addressesVisible = false;
+    let dataStore = {};
 
-    function getRandomColor() {
-      const letters = '0123456789ABCDEF';
-      return '#' + Array.from({length: 6}, () => letters[Math.floor(Math.random() * 16)]).join('');
+    function generateID() {
+      return Math.random().toString(36).substr(2, 8);
     }
 
-    function generateAddress() {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      let id = '';
-      for (let i = 0; i < 6; i++) id += chars[Math.floor(Math.random() * chars.length)];
-      return "#" + id;
+    function addSquare() {
+      const text = document.getElementById("textInput").value.trim();
+      const password = document.getElementById("dataPassword").value;
+      if (!text) return;
+
+      const id = generateID();
+      dataStore[id] = { text, password };
+
+      const square = document.createElement("div");
+      square.className = "square pulse";
+      square.id = id;
+      square.innerText = "Click";
+      square.onclick = () => revealData(id);
+
+      const address = document.createElement("div");
+      address.className = "address-label";
+      address.textContent = id;
+
+      const container = document.createElement("div");
+      container.style.display = "flex";
+      container.style.flexDirection = "column";
+      container.style.alignItems = "center";
+      container.appendChild(square);
+      container.appendChild(address);
+
+      document.getElementById("colorRow").appendChild(container);
+
+      document.getElementById("textInput").value = "";
+      document.getElementById("dataPassword").value = "";
     }
 
-    async function encryptData(text, password) {
-      const enc = new TextEncoder();
-      const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
-      const key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: enc.encode("salt123"), iterations: 100000, hash: "SHA-256" }, keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt"]);
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(text));
-      return {
-        cipher: btoa(String.fromCharCode(...new Uint8Array(encrypted))),
-        iv: btoa(String.fromCharCode(...iv))
-      };
-    }
+    function revealData(id) {
+      const square = document.getElementById(id);
+      const stored = dataStore[id];
 
-    async function decryptData(cipherText, password, ivBase64) {
-      try {
-        const enc = new TextEncoder(), dec = new TextDecoder();
-        const keyMaterial = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"]);
-        const key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: enc.encode("salt123"), iterations: 100000, hash: "SHA-256" }, keyMaterial, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
-        const iv = Uint8Array.from(atob(ivBase64), c => c.charCodeAt(0));
-        const encrypted = Uint8Array.from(atob(cipherText), c => c.charCodeAt(0));
-        const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, encrypted);
-        return dec.decode(decrypted);
-      } catch {
-        return null;
+      if (!stored) return;
+
+      const pass = prompt("Enter password to reveal:");
+      if (stored.password && pass !== stored.password) {
+        alert("Incorrect password!");
+        return;
+      }
+
+      const box = document.createElement("div");
+      box.className = "data-box";
+      box.textContent = stored.text;
+
+      const parent = square.parentElement;
+      if (!parent.querySelector(".data-box")) {
+        parent.appendChild(box);
       }
     }
 
-    async function addSecureSquare() {
-      const message = document.getElementById("userInput").value.trim();
-      const password = document.getElementById("passwordInput").value;
-      if (!message || !password) return alert("Enter message and password.");
-      const { cipher, iv } = await encryptData(message, password);
-      const squareData = { id: generateAddress(), cipher, iv, color: getRandomColor() };
-      renderSquare(squareData);
-      const stored = JSON.parse(localStorage.getItem("secureSquares") || "[]");
-      stored.push(squareData);
-      localStorage.setItem("secureSquares", JSON.stringify(stored));
-      document.getElementById("userInput").value = '';
-      document.getElementById("passwordInput").value = '';
-    }
-
-    function loadSquaresFromStorage() {
-      const stored = JSON.parse(localStorage.getItem("secureSquares") || "[]");
-      stored.forEach(renderSquare);
-    }
-
-    function toggleAddresses() {
-      addressesVisible = !addressesVisible;
-      document.getElementById("addressToggle").textContent = addressesVisible ? "Hide Addresses" : "Show Addresses";
-      document.querySelectorAll(".address-label").forEach(el => el.style.display = addressesVisible ? "block" : "none");
-    }
-
-    function searchSquare() {
-      const input = document.getElementById("searchBox").value.trim().toUpperCase();
-      if (!input) return;
-      const allSquares = document.querySelectorAll(".square");
-      let found = false;
-      allSquares.forEach(square => {
-        if (square.dataset.id.toUpperCase() === input) {
-          square.classList.add("pulse");
-          square.scrollIntoView({ behavior: "smooth", block: "center" });
-          found = true;
-          setTimeout(() => square.classList.remove("pulse"), 3000);
-        }
-      });
-      if (!found) alert("Address not found.");
-    }
-
-    function renderSquare(data) {
-      const wrapper = document.createElement("div");
-      wrapper.style.display = "flex";
-      wrapper.style.flexDirection = "column";
-      wrapper.style.alignItems = "center";
-
-      const square = document.createElement("div");
-      square.className = "square";
-      square.style.backgroundColor = data.color;
-      square.dataset.cipher = data.cipher;
-      square.dataset.iv = data.iv;
-      square.dataset.id = data.id;
-      square.dataset.color = data.color;
-
-      const label = document.createElement("div");
-      label.className = "address-label";
-      label.textContent = data.id;
-      label.style.display = addressesVisible ? "block" : "none";
-
-      const dataBox = document.createElement("div");
-      dataBox.className = "data-box";
-
-      square.addEventListener("click", async () => {
-        if (square.dataset.unlocked === "true") {
-          navigator.clipboard.writeText(dataBox.textContent);
-          const copiedMsg = document.createElement("div");
-          copiedMsg.textContent = "Copied!";
-          copiedMsg.style.position = "absolute";
-          copiedMsg.style.top = "-20px";
-          copiedMsg.style.fontSize = "10px";
-          copiedMsg.style.color = "lime";
-          copiedMsg.style.background = "rgba(0,0,0,0.7)";
-          copiedMsg.style.padding = "2px 6px";
-          copiedMsg.style.borderRadius = "4px";
-          square.appendChild(copiedMsg);
-          setTimeout(() => square.removeChild(copiedMsg), 1000);
-          return;
-        }
-        const pwd = prompt("Enter password to unlock:");
-        if (!pwd) return;
-        const decrypted = await decryptData(data.cipher, pwd, data.iv);
-        if (decrypted) {
-          square.textContent = decrypted.slice(0, 10) + (decrypted.length > 10 ? "..." : "");
-          dataBox.textContent = decrypted;
-          square.dataset.unlocked = "true";
-        } else {
-          alert("Incorrect password.");
-        }
-      });
-
-      wrapper.appendChild(square);
-      wrapper.appendChild(label);
-      wrapper.appendChild(dataBox);
-      colorRow.appendChild(wrapper);
-    }
-
-    function deleteSquare() {
-      const input = document.getElementById("searchBox").value.trim().toUpperCase();
-      if (!input) return alert("Enter address to delete.");
-      const stored = JSON.parse(localStorage.getItem("secureSquares") || "[]");
-      const squareToDelete = stored.find(sq => sq.id.toUpperCase() === input);
-      if (!squareToDelete) return alert("Square not found.");
-      const pwd = prompt("Enter password to delete:");
-      if (!pwd) return;
-      decryptData(squareToDelete.cipher, pwd, squareToDelete.iv).then(result => {
-        if (result !== null) {
-          const updated = stored.filter(sq => sq.id.toUpperCase() !== input);
-          localStorage.setItem("secureSquares", JSON.stringify(updated));
-          colorRow.innerHTML = '';
-          updated.forEach(renderSquare);
-        } else {
-          alert("Incorrect password.");
-        }
-      });
-    }
-
-    function revealAllSquares() {
-      const pwd = prompt("Enter password to unlock all squares:");
-      if (!pwd) return;
-      const allSquares = document.querySelectorAll(".square");
-      allSquares.forEach(async (square) => {
-        const cipher = square.dataset.cipher;
-        const iv = square.dataset.iv;
-        const decrypted = await decryptData(cipher, pwd, iv);
-        if (decrypted) {
-          square.textContent = decrypted.slice(0, 10) + (decrypted.length > 10 ? "..." : "");
-          const dataBox = square.parentElement.querySelector(".data-box");
-          dataBox.textContent = decrypted;
-          square.dataset.unlocked = "true";
-        }
-      });
-    }
-
-    function downloadData() {
-      const stored = localStorage.getItem("secureSquares");
-      const blob = new Blob([stored], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
+    function downloadJSON() {
+      const blob = new Blob([JSON.stringify(dataStore)], { type: "application/json" });
       const a = document.createElement("a");
-      a.href = url;
-      a.download = "secureSquares.json";
-      document.body.appendChild(a);
+      a.href = URL.createObjectURL(blob);
+      a.download = "squares.json";
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     }
 
-    function uploadData(event) {
-      const file = event.target.files[0];
+    function uploadJSON() {
+      const file = document.getElementById("uploadFile").files[0];
       if (!file) return;
+
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = function (e) {
         try {
-          const data = JSON.parse(e.target.result);
-          if (!Array.isArray(data)) throw new Error("Invalid format");
-          localStorage.setItem("secureSquares", JSON.stringify(data));
-          colorRow.innerHTML = '';
-          data.forEach(renderSquare);
+          const newData = JSON.parse(e.target.result);
+          dataStore = newData;
+          document.getElementById("colorRow").innerHTML = "";
+
+          for (let id in newData) {
+            const square = document.createElement("div");
+            square.className = "square";
+            square.id = id;
+            square.innerText = "Click";
+            square.onclick = () => revealData(id);
+
+            const address = document.createElement("div");
+            address.className = "address-label";
+            address.textContent = id;
+
+            const container = document.createElement("div");
+            container.style.display = "flex";
+            container.style.flexDirection = "column";
+            container.style.alignItems = "center";
+            container.appendChild(square);
+            container.appendChild(address);
+
+            document.getElementById("colorRow").appendChild(container);
+          }
         } catch (err) {
-          alert("Invalid file format.");
+          alert("Invalid JSON file!");
         }
       };
       reader.readAsText(file);
     }
 
-    window.onload = loadSquaresFromStorage;
+    function deleteSquare() {
+      const id = document.getElementById("deleteID").value.trim();
+      const pass = document.getElementById("deletePassword").value;
+      if (!dataStore[id]) return alert("ID not found");
+
+      if (dataStore[id].password && pass !== dataStore[id].password) {
+        return alert("Wrong password");
+      }
+
+      delete dataStore[id];
+      const element = document.getElementById(id);
+      if (element && element.parentElement) {
+        element.parentElement.remove();
+      }
+
+      document.getElementById("deleteID").value = "";
+      document.getElementById("deletePassword").value = "";
+    }
   </script>
 </body>
 </html>
