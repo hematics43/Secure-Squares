@@ -89,7 +89,7 @@
       text-align: center;
       word-wrap: break-word;
     }
-    .popup {
+    .popup, .howto-modal {
       position: fixed;
       top: 50%;
       left: 50%;
@@ -99,10 +99,11 @@
       border: 1px solid #0f0;
       padding: 20px;
       z-index: 1000;
-      text-align: center;
+      text-align: left;
+      max-width: 90vw;
       box-shadow: 0 0 20px #0f0;
     }
-    .popup button {
+    .popup button, .howto-modal button {
       margin-top: 10px;
     }
     .overlay {
@@ -111,6 +112,21 @@
       width: 100vw; height: 100vh;
       background-color: rgba(0,0,0,0.8);
       z-index: 999;
+    }
+    .howto-button {
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      padding: 10px;
+      background: #111;
+      border: 1px solid #0f0;
+      color: #0f0;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    .howto-button:hover {
+      background: #0f0;
+      color: #000;
     }
     @media (max-width: 600px) {
       .square { width: 60px; height: 60px; font-size: 10px; }
@@ -147,6 +163,8 @@
 
   <div class="color-row" id="colorRow"></div>
   <div id="popupContainer"></div>
+
+  <button class="howto-button" onclick="showHowTo()">📘 How To Use</button>
 
   <script>
     let dataStore = {};
@@ -293,6 +311,30 @@
       });
 
       if (!found) alert("Square ID not found.");
+    }
+
+    function showHowTo() {
+      const content = `
+        <h3>📘 How to Use</h3>
+        <ul>
+          <li>Enter a title, content, and optional password.</li>
+          <li>Click "Add Square" to create an encrypted square.</li>
+          <li>Click any square and enter password to reveal data.</li>
+        </ul>
+        <h3>⚙️ How It Works</h3>
+        <ul>
+          <li>Each square has a unique ID (auto-generated).</li>
+          <li>Data is stored in memory until you save/download.</li>
+          <li>Password protected entries are secure unless leaked.</li>
+        </ul>
+        <h3>🔐 Security Tips</h3>
+        <ul>
+          <li>Use strong, unique passwords for sensitive content.</li>
+          <li>Never share JSON files unless you trust the recipient.</li>
+          <li>This app runs locally — no server involved!</li>
+        </ul>
+      `;
+      showPopup(content);
     }
   </script>
 </body>
